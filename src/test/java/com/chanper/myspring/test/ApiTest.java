@@ -18,13 +18,13 @@ public class ApiTest {
         beanFactory.registerBeanDefinition("userService", beanDefinition);
 
         // 3. 第一次获取 Bean
-        UserService userService = (UserService) beanFactory.getBean("userService");
+        UserService userService = (UserService) beanFactory.getBean("userService", "chanper");
         userService.queryUserInfo();
 
         // 4. 第二次获取 Bean
-        UserService userService_singleton = (UserService) beanFactory.getBean("userService");
-        userService_singleton.queryUserInfo();
-        System.out.println(userService == userService_singleton);
+        // UserService userService_singleton = (UserService) beanFactory.getBean("userService");
+        // userService_singleton.queryUserInfo();
+        // System.out.println(userService == userService_singleton);
     }
 
 

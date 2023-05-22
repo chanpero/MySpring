@@ -3,19 +3,46 @@ package com.chanper.myspring.beans.factory.support;
 import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFactory {
+    private InstantiationStrategy instantiationStrategy = new CglibSubclassingInstantiationStrategy();
+    // private InstantiationStrategy instantiationStrategy = new SimpleInstantiationStrategy();
+
     @Override
-    protected Object createBean(String beanName, BeanDefinition beanDefinition) throws BeansException {
+    protected Object createBean(String beanName, BeanDefinition beanDefinition, Object[] args) throws BeansException {
         Object bean = null;
         try {
-            bean = beanDefinition.getBeanClass().getDeclaredConstructor().newInstance();
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
-            throw new RuntimeException("Instantiation of bean failed", e);
+            bean = createBeanInstance(beanDefinition, beanName, args);
+        } catch (Exception e) {
+            throw new BeansException("Instantiation of bean failed", e);
         }
 
         addSingleton(beanName, bean);
         return bean;
+    }
+
+    protected Object createBeanInstance(BeanDefinition beanDefinition, String beanName, Object[] args) {
+        Constructor constructorToUse = null;
+        Class<?> beanClass = beanDefinition.getBeanClass();
+        Constructor<?>[] declaredConstructors = beanClass.getDeclaredConstructors();
+
+        for(Constructor ctor : declaredConstructors) {
+            if(null != args && ctor.getParameterTypes().length == args.length){
+                constructorToUse = ctor;
+                break;
+            }
+        }
+
+        return getInstantiationStrategy().instantiate(beanDefinition, beanName, constructorToUse, args);
+    }
+
+    public InstantiationStrategy getInstantiationStrategy() {
+        return instantiationStrategy;
+    }
+
+    public void setInstantiationStrategy(InstantiationStrategy instantiationStrategy) {
+        this.instantiationStrategy = instantiationStrategy;
     }
 }
