@@ -4,8 +4,6 @@ import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.factory.BeanFactory;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
 
-import java.beans.Beans;
-
 public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory {
 
     @Override
@@ -18,9 +16,14 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         return doGetBean(name, args);
     }
 
+    @Override
+    public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
+        return (T) getBean(name);
+    }
+
     private <T> T doGetBean(String name, java.lang.Object[] args) {
         Object bean = getSingleton(name);
-        if(bean != null)
+        if (bean != null)
             return (T) bean;
 
         BeanDefinition beanDefinition = getBeanDefinition(name);
