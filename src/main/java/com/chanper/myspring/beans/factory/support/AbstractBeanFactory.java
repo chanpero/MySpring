@@ -5,11 +5,14 @@ import com.chanper.myspring.beans.factory.BeanFactory;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
 import com.chanper.myspring.beans.factory.config.BeanPostProcessor;
 import com.chanper.myspring.beans.factory.config.ConfigurableBeanFactory;
+import com.chanper.myspring.util.ClassUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements ConfigurableBeanFactory {
+
+    private final ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
     /**
      * BeanPostProcessors to apply in createBean
@@ -52,5 +55,9 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     public List<BeanPostProcessor> getBeanPostProcessors() {
         return beanPostProcessors;
+    }
+
+    public ClassLoader getBeanClassLoader() {
+        return this.beanClassLoader;
     }
 }
