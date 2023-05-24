@@ -7,10 +7,13 @@ import com.chanper.myspring.beans.factory.config.BeanDefinition;
 import com.chanper.myspring.beans.factory.config.BeanReference;
 import com.chanper.myspring.beans.factory.support.DefaultListableBeanFactory;
 import com.chanper.myspring.beans.factory.xml.XmlBeanDefinitionReader;
+import com.chanper.myspring.context.support.ClassPathXmlApplicationContext;
 import com.chanper.myspring.core.io.DefaultResourceLoader;
 import com.chanper.myspring.core.io.Resource;
 import com.chanper.myspring.test.bean.UserDao;
 import com.chanper.myspring.test.bean.UserService;
+import com.chanper.myspring.test.common.MyBeanFactoryPostProcessor;
+import com.chanper.myspring.test.common.MyBeanPostProcessor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -90,6 +93,40 @@ public class ApiTest {
         // 3. 获取 bean 对象调用方法
         UserService userService = beanFactory.getBean("userService", UserService.class);
         userService.queryUserInfo();
+    }
+
+    @Test
+    public void test_BeanFactoryPostProcessorAndBeanPostProcessor() {
+        // 1. 初始化 BeanFactory
+        DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+
+        // 2. 读取配置文件 & 注册 Bean
+        XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(beanFactory);
+        reader.loadBeanDefinitions("classpath:spring.xml");
+
+        // 3. BeanDefinition 加载完成 & Bean 实例化之前 修改 BeanDefinition 属性值
+        MyBeanFactoryPostProcessor beanFactoryPostProcessor = new MyBeanFactoryPostProcessor();
+        beanFactoryPostProcessor.postProcessBeanFactory(beanFactory);
+
+        // 4. Bean 实例化之后，修改Bean 属性信息
+        MyBeanPostProcessor beanPostProcessor = new MyBeanPostProcessor();
+        beanFactory.addBeanPostProcessor(beanPostProcessor);
+
+        // 5. 获取 Bean 对象调用方法
+        UserService userService = beanFactory.getBean("userService", UserService.class);
+        String res = userService.queryUserInfo();
+        System.out.println("Test result: " + res);
+    }
+
+    @Test
+    public void test_application_context() {
+        // 1. 初始化 BeanFactory
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring_postprocessor.xml");
+
+        // 2. 获取 Bean 对象调用方法
+        UserService userService = applicationContext.getBean("userService", UserService.class);
+        String result = userService.queryUserInfo();
+        System.out.println("Test result: " + result);
     }
 
 }

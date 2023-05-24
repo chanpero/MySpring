@@ -7,4 +7,8 @@
         <property name="location" value="深圳"/>
         <property name="userDao" ref="userDao"/>
     </bean>
+
+    <bean class="com.chanper.myspring.test.common.MyBeanFactoryPostProcessor"/>
+    <bean class="com.chanper.myspring.test.common.MyBeanPostProcessor"/>
+
 </beans>

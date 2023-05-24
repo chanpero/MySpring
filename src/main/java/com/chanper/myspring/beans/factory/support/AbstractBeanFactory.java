@@ -3,8 +3,18 @@ package com.chanper.myspring.beans.factory.support;
 import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.factory.BeanFactory;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
+import com.chanper.myspring.beans.factory.config.BeanPostProcessor;
+import com.chanper.myspring.beans.factory.config.ConfigurableBeanFactory;
 
-public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory {
+import java.util.ArrayList;
+import java.util.List;
+
+public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements ConfigurableBeanFactory {
+
+    /**
+     * BeanPostProcessors to apply in createBean
+     */
+    private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
 
     @Override
     public Object getBean(String name) throws BeansException {
@@ -21,7 +31,7 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         return (T) getBean(name);
     }
 
-    private <T> T doGetBean(String name, java.lang.Object[] args) {
+    private <T> T doGetBean(String name, final Object[] args) {
         Object bean = getSingleton(name);
         if (bean != null)
             return (T) bean;
@@ -34,4 +44,13 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
 
     protected abstract Object createBean(String beanName, BeanDefinition beanDefinition, Object[] args) throws BeansException;
 
+    @Override
+    public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
+        this.beanPostProcessors.remove(beanPostProcessor);
+        this.beanPostProcessors.add(beanPostProcessor);
+    }
+
+    public List<BeanPostProcessor> getBeanPostProcessors() {
+        return beanPostProcessors;
+    }
 }
