@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
 
-    <bean id="userService" class="com.chanper.myspring.test.bean.UserService" scope="prototype">
-        <property name="uId" value="10001"/>
-        <property name="company" value="腾讯"/>
-        <property name="location" value="深圳"/>
-        <property name="userDao" ref="proxyUserDao"/>
-    </bean>
+    <!--<bean id="userService" class="com.chanper.myspring.test.bean.UserService" scope="prototype">-->
+    <!--    <property name="uId" value="10001"/>-->
+    <!--    <property name="company" value="腾讯"/>-->
+    <!--    <property name="location" value="深圳"/>-->
+    <!--    <property name="userDao" ref="proxyUserDao"/>-->
+    <!--</bean>-->
 
-    <bean id="proxyUserDao" class="com.chanper.myspring.test.bean.ProxyBeanFactory"/>
+    <!--<bean id="proxyUserDao" class="com.chanper.myspring.test.bean.ProxyBeanFactory"/>-->
+
+    <bean class="com.chanper.myspring.test.event.ContextRefreshedEventListener"/>
+    <bean class="com.chanper.myspring.test.event.CustomEventListener"/>
+    <bean class="com.chanper.myspring.test.event.ContextClosedEventListener"/>
+
 </beans>

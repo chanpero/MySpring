@@ -17,4 +17,19 @@ public class ClassUtils {
 
         return cl;
     }
+
+    /**
+     * check whether the specified class is a CGLIB-generated class
+     *
+     * @param clazz
+     * @return
+     */
+    public static boolean isCglibProxyClass(Class<?> clazz) {
+        return (clazz != null && isCglibProxyClassName(clazz.getName()));
+    }
+
+
+    public static boolean isCglibProxyClassName(String className) {
+        return (className != null && className.contains("$$"));
+    }
 }
