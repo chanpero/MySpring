@@ -1,6 +1,11 @@
 package com.chanper.myspring.test;
 
 import cn.hutool.core.io.IoUtil;
+import com.chanper.myspring.aop.AdvisedSupport;
+import com.chanper.myspring.aop.TargetSource;
+import com.chanper.myspring.aop.aspectj.AspectJExpressionPointcut;
+import com.chanper.myspring.aop.framework.Cglib2AopProxy;
+import com.chanper.myspring.aop.framework.JdkDynamicAopProxy;
 import com.chanper.myspring.beans.PropertyValue;
 import com.chanper.myspring.beans.PropertyValues;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
@@ -10,8 +15,10 @@ import com.chanper.myspring.beans.factory.xml.XmlBeanDefinitionReader;
 import com.chanper.myspring.context.support.ClassPathXmlApplicationContext;
 import com.chanper.myspring.core.io.DefaultResourceLoader;
 import com.chanper.myspring.core.io.Resource;
+import com.chanper.myspring.test.bean.IUserService;
 import com.chanper.myspring.test.bean.UserDao;
 import com.chanper.myspring.test.bean.UserService;
+import com.chanper.myspring.test.bean.UserServiceInterceptor;
 import com.chanper.myspring.test.common.MyBeanFactoryPostProcessor;
 import com.chanper.myspring.test.common.MyBeanPostProcessor;
 import com.chanper.myspring.test.event.CustomEvent;
@@ -20,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 
 public class ApiTest {
 
@@ -169,5 +177,34 @@ public class ApiTest {
         applicationContext.publishEvent(new CustomEvent(applicationContext, 123456L, "成功了！"));
 
         applicationContext.registerShutdownHook();
+    }
+
+
+    @Test
+    public void test_aop() throws NoSuchMethodException {
+        AspectJExpressionPointcut pointcut = new AspectJExpressionPointcut("execution(* com.chanper.myspring.test.bean.UserService.*(..))");
+
+        Class<UserService> clazz = UserService.class;
+        Method method = clazz.getDeclaredMethod("queryUserInfo");
+
+        System.out.println(pointcut.matches(clazz));
+        System.out.println(pointcut.matches(method, clazz));
+    }
+
+    @Test
+    public void test_dynamic(){
+        IUserService userService = new UserService();
+        AdvisedSupport advisedSupport = new AdvisedSupport();
+        advisedSupport.setTargetSource(new TargetSource(userService));
+        advisedSupport.setMethodInterceptor(new UserServiceInterceptor());
+        advisedSupport.setMethodMatcher(new AspectJExpressionPointcut("execution(* com.chanper.myspring.test.bean.IUserService.*(..))"));
+
+        // JDK Proxy target
+        IUserService proxy_jdk = (IUserService) new JdkDynamicAopProxy(advisedSupport).getProxy();
+        System.out.println("Test result: " + proxy_jdk.queryUserInfo() + "\r\n");
+
+        // CGLIB Proxy target
+        IUserService proxy_cglib = (IUserService) new Cglib2AopProxy(advisedSupport).getProxy();
+        System.out.println("Text result: " + proxy_cglib.register("cc") + "\r\n");
     }
 }
