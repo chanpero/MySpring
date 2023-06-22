@@ -12,9 +12,11 @@ import com.chanper.myspring.aop.framework.JdkDynamicAopProxy;
 import com.chanper.myspring.aop.framework.ProxyFactory;
 import com.chanper.myspring.aop.framework.ReflectiveMethodInvocation;
 import com.chanper.myspring.aop.framework.adapter.MethodBeforeAdviceInterceptor;
+import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.PropertyValue;
 import com.chanper.myspring.beans.PropertyValues;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
+import com.chanper.myspring.beans.factory.config.BeanPostProcessor;
 import com.chanper.myspring.beans.factory.config.BeanReference;
 import com.chanper.myspring.beans.factory.support.DefaultListableBeanFactory;
 import com.chanper.myspring.beans.factory.xml.XmlBeanDefinitionReader;
@@ -36,6 +38,8 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ApiTest {
 
@@ -297,5 +301,19 @@ public class ApiTest {
         String result = proxy.queryUserInfo();
         System.out.println("测试结果：" + result);
 
+    }
+
+    @Test
+    public void test_scan() {
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring.xml");
+        IUserService userService = applicationContext.getBean("userService", IUserService.class);
+        System.out.println("Test result: " + userService.queryUserInfo());
+    }
+
+    @Test
+    public void test_property() {
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring-property.xml");
+        IUserService userService = applicationContext.getBean("userService", IUserService.class);
+        System.out.println("测试结果：" + userService);
     }
 }

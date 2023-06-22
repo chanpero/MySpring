@@ -4,10 +4,14 @@ import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.factory.*;
 import com.chanper.myspring.context.ApplicationContext;
 import com.chanper.myspring.context.ApplicationContextAware;
+import com.chanper.myspring.stereotype.Component;
 
 import java.util.Random;
 
+@Component("userService")
 public class UserService implements IUserService{
+
+    private String token;
 
     @Override
     public String queryUserInfo() {
@@ -27,5 +31,9 @@ public class UserService implements IUserService{
             e.printStackTrace();
         }
         return "UserService::register";
+    }
+
+    public String getToken() {
+        return token;
     }
 }
