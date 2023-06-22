@@ -6,10 +6,7 @@ import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.PropertyValue;
 import com.chanper.myspring.beans.PropertyValues;
 import com.chanper.myspring.beans.factory.*;
-import com.chanper.myspring.beans.factory.config.AutowireCapableBeanFactory;
-import com.chanper.myspring.beans.factory.config.BeanDefinition;
-import com.chanper.myspring.beans.factory.config.BeanPostProcessor;
-import com.chanper.myspring.beans.factory.config.BeanReference;
+import com.chanper.myspring.beans.factory.config.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -22,6 +19,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     protected Object createBean(String beanName, BeanDefinition beanDefinition, Object[] args) throws BeansException {
         Object bean;
         try {
+            // 判断是否返回代理Bean对象
+            bean = resolveBeforeInstantiation(beanName, beanDefinition);
+            if (bean != null)
+                return bean;
+            // 实例化 Bean
             bean = createBeanInstance(beanDefinition, beanName, args);
             // 填充属性
             applyPropertyValues(beanName, bean, beanDefinition);
@@ -38,6 +40,24 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         if (beanDefinition.isSingleton())
             registerSingleton(beanName, bean);
         return bean;
+    }
+
+    protected Object resolveBeforeInstantiation(String beanName, BeanDefinition beanDefinition) {
+        Object bean = applyBeanPostProcessorsBeforeInstantiation(beanDefinition.getBeanClass(), beanName);
+        if (bean != null)
+            bean = applyBeanPostProcessorsBeforeInitialization(bean, beanName);
+        return bean;
+    }
+
+    private Object applyBeanPostProcessorsBeforeInstantiation(Class beanClass, String beanName) {
+        for (BeanPostProcessor beanPostProcessor : getBeanPostProcessors()) {
+            if (beanPostProcessor instanceof InstantiationAwareBeanPostProcessor) {
+                Object result = ((InstantiationAwareBeanPostProcessor) beanPostProcessor).postProcessBeforeInstantiation(beanClass, beanName);
+                if (result != null)
+                    return result;
+            }
+        }
+        return null;
     }
 
     protected Object createBeanInstance(BeanDefinition beanDefinition, String beanName, Object[] args) {

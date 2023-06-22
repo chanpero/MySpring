@@ -2,10 +2,16 @@ package com.chanper.myspring.test;
 
 import cn.hutool.core.io.IoUtil;
 import com.chanper.myspring.aop.AdvisedSupport;
+import com.chanper.myspring.aop.ClassFilter;
+import com.chanper.myspring.aop.MethodMatcher;
 import com.chanper.myspring.aop.TargetSource;
 import com.chanper.myspring.aop.aspectj.AspectJExpressionPointcut;
+import com.chanper.myspring.aop.aspectj.AspectJExpressionPointcutAdvisor;
 import com.chanper.myspring.aop.framework.Cglib2AopProxy;
 import com.chanper.myspring.aop.framework.JdkDynamicAopProxy;
+import com.chanper.myspring.aop.framework.ProxyFactory;
+import com.chanper.myspring.aop.framework.ReflectiveMethodInvocation;
+import com.chanper.myspring.aop.framework.adapter.MethodBeforeAdviceInterceptor;
 import com.chanper.myspring.beans.PropertyValue;
 import com.chanper.myspring.beans.PropertyValues;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
@@ -15,19 +21,21 @@ import com.chanper.myspring.beans.factory.xml.XmlBeanDefinitionReader;
 import com.chanper.myspring.context.support.ClassPathXmlApplicationContext;
 import com.chanper.myspring.core.io.DefaultResourceLoader;
 import com.chanper.myspring.core.io.Resource;
-import com.chanper.myspring.test.bean.IUserService;
-import com.chanper.myspring.test.bean.UserDao;
-import com.chanper.myspring.test.bean.UserService;
-import com.chanper.myspring.test.bean.UserServiceInterceptor;
+import com.chanper.myspring.test.bean.*;
 import com.chanper.myspring.test.common.MyBeanFactoryPostProcessor;
 import com.chanper.myspring.test.common.MyBeanPostProcessor;
 import com.chanper.myspring.test.event.CustomEvent;
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aspectj.lang.annotation.Before;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
 public class ApiTest {
 
@@ -60,11 +68,6 @@ public class ApiTest {
     }
 
     private DefaultResourceLoader resourceLoader;
-
-    @BeforeEach
-    public void init() {
-        resourceLoader = new DefaultResourceLoader();
-    }
 
     @Test
     public void test_classpath() throws IOException {
@@ -179,18 +182,6 @@ public class ApiTest {
         applicationContext.registerShutdownHook();
     }
 
-
-    @Test
-    public void test_aop() throws NoSuchMethodException {
-        AspectJExpressionPointcut pointcut = new AspectJExpressionPointcut("execution(* com.chanper.myspring.test.bean.UserService.*(..))");
-
-        Class<UserService> clazz = UserService.class;
-        Method method = clazz.getDeclaredMethod("queryUserInfo");
-
-        System.out.println(pointcut.matches(clazz));
-        System.out.println(pointcut.matches(method, clazz));
-    }
-
     @Test
     public void test_dynamic(){
         IUserService userService = new UserService();
@@ -206,5 +197,105 @@ public class ApiTest {
         // CGLIB Proxy target
         IUserService proxy_cglib = (IUserService) new Cglib2AopProxy(advisedSupport).getProxy();
         System.out.println("Text result: " + proxy_cglib.register("cc") + "\r\n");
+    }
+
+    private static AdvisedSupport advisedSupport;
+
+    @BeforeAll
+    public static void init() {
+        // 目标对象
+        IUserService userService = new UserService();
+        // 组装代理信息
+        advisedSupport = new AdvisedSupport();
+        advisedSupport.setTargetSource(new TargetSource(userService));
+        advisedSupport.setMethodInterceptor(new UserServiceInterceptor());
+        advisedSupport.setMethodMatcher(new AspectJExpressionPointcut("execution(* com.chanper.myspring.test.bean.IUserService.*(..))"));
+    }
+
+    @Test
+    public void test_proxyFactory() {
+        advisedSupport.setProxyTargetClass(false);
+        IUserService proxy = (IUserService) new ProxyFactory(advisedSupport).getProxy();
+
+        System.out.println("Test result: " + proxy.queryUserInfo());
+    }
+
+    @Test
+    public void test_beforeAdvice() {
+        UserServiceBeforeAdvice beforeAdvice = new UserServiceBeforeAdvice();
+        MethodBeforeAdviceInterceptor interceptor = new MethodBeforeAdviceInterceptor(beforeAdvice);
+        advisedSupport.setMethodInterceptor(interceptor);
+
+        IUserService proxy = (IUserService) new ProxyFactory(advisedSupport).getProxy();
+        System.out.println("测试结果：" + proxy.queryUserInfo());
+    }
+
+    @Test
+    public void test_advisor() {
+        // 目标对象
+        IUserService userService = new UserService();
+
+        AspectJExpressionPointcutAdvisor advisor = new AspectJExpressionPointcutAdvisor();
+        advisor.setExpression("execution(* com.chanper.myspring.test.bean.IUserService.*(..))");
+        advisor.setAdvice(new MethodBeforeAdviceInterceptor(new UserServiceBeforeAdvice()));
+
+        ClassFilter classFilter = advisor.getPointcut().getClassFilter();
+        if (classFilter.matches(userService.getClass())) {
+            AdvisedSupport advisedSupport = new AdvisedSupport();
+
+            TargetSource targetSource = new TargetSource(userService);
+            advisedSupport.setTargetSource(targetSource);
+            advisedSupport.setMethodInterceptor((MethodInterceptor) advisor.getAdvice());
+            advisedSupport.setMethodMatcher(advisor.getPointcut().getMethodMatcher());
+            advisedSupport.setProxyTargetClass(false); // false/true，JDK动态代理、CGlib动态代理
+
+            IUserService proxy = (IUserService) new ProxyFactory(advisedSupport).getProxy();
+            System.out.println("测试结果：" + proxy.queryUserInfo());
+        }
+    }
+
+    @Test
+    public void test_aop() {
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring.xml");
+
+        IUserService userService = applicationContext.getBean("userService", IUserService.class);
+        System.out.println("测试结果：" + userService.queryUserInfo());
+    }
+
+    @Test
+    public void test_proxy_method() {
+        // 目标对象(可以替换成任何的目标对象)
+        Object targetObj = new UserService();
+
+        // AOP 代理
+        IUserService proxy = (IUserService) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(), targetObj.getClass().getInterfaces(), new InvocationHandler() {
+            // 方法匹配器
+            MethodMatcher methodMatcher = new AspectJExpressionPointcut("execution(* com.chanper.myspring.test.bean.IUserService.*(..))");
+
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                if (methodMatcher.matches(method, targetObj.getClass())) {
+                    // 方法拦截器
+                    MethodInterceptor methodInterceptor = invocation -> {
+                        long start = System.currentTimeMillis();
+                        try {
+                            return invocation.proceed();
+                        } finally {
+                            System.out.println("监控 - Begin By AOP");
+                            System.out.println("方法名称：" + invocation.getMethod().getName());
+                            System.out.println("方法耗时：" + (System.currentTimeMillis() - start) + "ms");
+                            System.out.println("监控 - End\r\n");
+                        }
+                    };
+                    // 反射调用
+                    return methodInterceptor.invoke(new ReflectiveMethodInvocation(targetObj, method, args));
+                }
+                return method.invoke(targetObj, args);
+            }
+        });
+
+        String result = proxy.queryUserInfo();
+        System.out.println("测试结果：" + result);
+
     }
 }

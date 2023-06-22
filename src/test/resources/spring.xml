@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans>
 
-    <!--<bean id="userService" class="com.chanper.myspring.test.bean.UserService" scope="prototype">-->
-    <!--    <property name="uId" value="10001"/>-->
-    <!--    <property name="company" value="腾讯"/>-->
-    <!--    <property name="location" value="深圳"/>-->
-    <!--    <property name="userDao" ref="proxyUserDao"/>-->
-    <!--</bean>-->
+    <bean id="userService" class="com.chanper.myspring.test.bean.UserService"/>
+    <bean class="com.chanper.myspring.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"/>
+    <bean id="beforeAdvice" class="com.chanper.myspring.test.bean.UserServiceBeforeAdvice"/>
 
-    <!--<bean id="proxyUserDao" class="com.chanper.myspring.test.bean.ProxyBeanFactory"/>-->
+    <bean id="methodInterceptor" class="com.chanper.myspring.aop.framework.adapter.MethodBeforeAdviceInterceptor">
+        <property name="advice" ref="beforeAdvice"/>
+    </bean>
 
-    <bean class="com.chanper.myspring.test.event.ContextRefreshedEventListener"/>
-    <bean class="com.chanper.myspring.test.event.CustomEventListener"/>
-    <bean class="com.chanper.myspring.test.event.ContextClosedEventListener"/>
+    <bean id="pointcutAdvisor" class="com.chanper.myspring.aop.aspectj.AspectJExpressionPointcutAdvisor">
+        <property name="expression" value="execution(* com.chanper.myspring.test.bean.IUserService.*(..))"/>
+        <property name="advice" ref="methodInterceptor"/>
+    </bean>
 
 </beans>
