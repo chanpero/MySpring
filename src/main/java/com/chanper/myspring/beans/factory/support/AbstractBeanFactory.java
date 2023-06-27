@@ -1,12 +1,12 @@
 package com.chanper.myspring.beans.factory.support;
 
 import com.chanper.myspring.beans.BeansException;
-import com.chanper.myspring.beans.factory.BeanFactory;
 import com.chanper.myspring.beans.factory.FactoryBean;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
 import com.chanper.myspring.beans.factory.config.BeanPostProcessor;
 import com.chanper.myspring.beans.factory.config.ConfigurableBeanFactory;
 import com.chanper.myspring.util.ClassUtils;
+import com.chanper.myspring.util.StringValueResolver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +22,11 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
      * BeanPostProcessors to apply in createBean
      */
     private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
+
+    /**
+     * String resolvers to apply e.g. to annotation attribute values
+     */
+    private final List<StringValueResolver> embeddedValueResolvers = new ArrayList<>();
 
     @Override
     public Object getBean(String name) throws BeansException {
@@ -77,5 +82,18 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
     public ClassLoader getBeanClassLoader() {
         return this.beanClassLoader;
+    }
+
+    @Override
+    public void addEmbeddedValueResolver(StringValueResolver valueResolver) {
+        this.embeddedValueResolvers.add(valueResolver);
+    }
+
+    @Override
+    public String resolveEmbeddedValue(String value) {
+        String result = value;
+        for (StringValueResolver resolver : this.embeddedValueResolvers)
+            result = resolver.resolveStringValue(result);
+        return result;
     }
 }

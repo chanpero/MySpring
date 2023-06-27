@@ -1,5 +1,6 @@
 package com.chanper.myspring.test;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.IoUtil;
 import com.chanper.myspring.aop.AdvisedSupport;
 import com.chanper.myspring.aop.ClassFilter;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -315,5 +317,21 @@ public class ApiTest {
         ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring-property.xml");
         IUserService userService = applicationContext.getBean("userService", IUserService.class);
         System.out.println("测试结果：" + userService);
+    }
+
+    @Test
+    public void test_autowiredAnnotation() {
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring.xml");
+        IUserService userService = applicationContext.getBean("userService", IUserService.class);
+        System.out.println("Test result: " + userService.queryUserInfo());
+    }
+
+    @Test
+    public void test_BeanUtil() throws NoSuchFieldException {
+        UserService userService = new UserService();
+        UserDao userDao = new UserDao();
+        Field dao = UserService.class.getDeclaredField("userDao");
+        BeanUtil.setFieldValue(userService, dao.getName(), userDao);
+        System.out.println(userService.queryUserInfo());
     }
 }

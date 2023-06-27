@@ -1,6 +1,7 @@
 package com.chanper.myspring.beans.factory.config;
 
 import com.chanper.myspring.beans.factory.HierarchicalBeanFactory;
+import com.chanper.myspring.util.StringValueResolver;
 
 public interface ConfigurableBeanFactory extends HierarchicalBeanFactory, SingletonBeanRegistry {
     String SCOPE_SINGLETON = "singleton";
@@ -8,5 +9,20 @@ public interface ConfigurableBeanFactory extends HierarchicalBeanFactory, Single
     String SCOPE_PROTOTYPE = "prototype";
 
     void addBeanPostProcessor(BeanPostProcessor beanPostProcessor);
+
+    /**
+     * Add StringResolver for embedded values such as annotation attributes
+     * @param valueResolver
+     */
+    void addEmbeddedValueResolver(StringValueResolver valueResolver);
+
+    /**
+     * Resolve the given embedded value, e.g. an annotation attribute
+     * @param value
+     * @return
+     */
+    String resolveEmbeddedValue(String value);
+
+
 
 }
