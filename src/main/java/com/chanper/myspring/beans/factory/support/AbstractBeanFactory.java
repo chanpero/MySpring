@@ -44,6 +44,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
     }
 
     private <T> T doGetBean(String name, final Object[] args) {
+        // 能找到说明之前 doGetBean 过这个Bean，null说明之前没创建也没被其它 Bean 依赖
         Object sharedInstance = getSingleton(name);
         if (sharedInstance != null)
             return (T) getObjectForBeanInstance(sharedInstance, name);

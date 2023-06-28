@@ -1,6 +1,7 @@
 package com.chanper.myspring.beans.factory.support;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.OptionalBean;
 import cn.hutool.core.util.StrUtil;
 import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.PropertyValue;
@@ -17,18 +18,30 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     @Override
     protected Object createBean(String beanName, BeanDefinition beanDefinition, Object[] args) throws BeansException {
+        Object bean = resolveBeforeInstantiation(beanName, beanDefinition);
+        if(bean != null)
+            return bean;
+
+        return doCreateBean(beanName, beanDefinition, args);
+    }
+
+    protected Object doCreateBean(String beanName, BeanDefinition beanDefinition, Object[] args) {
         Object bean;
         try {
-            // 判断是否返回代理Bean对象
-            bean = resolveBeforeInstantiation(beanName, beanDefinition);
-            if (bean != null)
-                return bean;
             // 实例化 Bean
             bean = createBeanInstance(beanDefinition, beanName, args);
+
+            // 处理循环依赖
+            if(beanDefinition.isSingleton()) {
+                Object finalBean = bean;
+                addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, beanDefinition, finalBean));
+            }
+
             // 实例化后判断
             boolean continueWithPropertyPopulation = applyBeanPostProcessorsAfterInstantiation(beanName, bean);
             if(!continueWithPropertyPopulation)
                 return bean;
+
             // 设置 bean 属性前允许 BeanPostProcessor 修改属性值
             applyBeanPostProcessorsBeforeApplyingPropertyValues(beanName, bean, beanDefinition);
             // 填充属性
@@ -42,10 +55,25 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
         // 注册实现了 DisposableBean 接口的 Bean 对象
         registerDisposableBeanIfNecessary(beanName, bean, beanDefinition);
 
-        // 判断是否单例 Bean
-        if (beanDefinition.isSingleton())
-            registerSingleton(beanName, bean);
-        return bean;
+        // 判断 SCOPE_SINGLETON/PROTOTYPE
+        Object exposedObject = bean;
+        if(beanDefinition.isSingleton()) {
+            exposedObject = getSingleton(beanName);
+            registerSingleton(beanName, exposedObject);
+        }
+        return exposedObject;
+    }
+
+    protected Object getEarlyBeanReference(String beanName, BeanDefinition beanDefinition, Object bean) {
+        Object exposedObject = bean;
+        for (BeanPostProcessor beanPostProcessor : getBeanPostProcessors()) {
+            if(beanPostProcessor instanceof InstantiationAwareBeanPostProcessor) {
+                exposedObject = ((InstantiationAwareBeanPostProcessor) beanPostProcessor).getEarlyBeanReference(exposedObject, beanName);
+                if(exposedObject == null)
+                    return exposedObject;
+            }
+        }
+        return exposedObject;
     }
 
     protected Object resolveBeforeInstantiation(String beanName, BeanDefinition beanDefinition) {

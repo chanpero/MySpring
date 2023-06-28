@@ -334,4 +334,13 @@ public class ApiTest {
         BeanUtil.setFieldValue(userService, dao.getName(), userDao);
         System.out.println(userService.queryUserInfo());
     }
+
+    @Test
+    public void test_circular() {
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring.xml");
+        Husband husband = applicationContext.getBean("husband", Husband.class);
+        Wife wife = applicationContext.getBean("wife", Wife.class);
+        System.out.println("Husband's wife: " + husband.queryWife());
+        System.out.println("Wife's husband: " + wife.queryHusband());
+    }
 }
