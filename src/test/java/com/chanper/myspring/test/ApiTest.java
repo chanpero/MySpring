@@ -13,11 +13,9 @@ import com.chanper.myspring.aop.framework.JdkDynamicAopProxy;
 import com.chanper.myspring.aop.framework.ProxyFactory;
 import com.chanper.myspring.aop.framework.ReflectiveMethodInvocation;
 import com.chanper.myspring.aop.framework.adapter.MethodBeforeAdviceInterceptor;
-import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.PropertyValue;
 import com.chanper.myspring.beans.PropertyValues;
 import com.chanper.myspring.beans.factory.config.BeanDefinition;
-import com.chanper.myspring.beans.factory.config.BeanPostProcessor;
 import com.chanper.myspring.beans.factory.config.BeanReference;
 import com.chanper.myspring.beans.factory.support.DefaultListableBeanFactory;
 import com.chanper.myspring.beans.factory.xml.XmlBeanDefinitionReader;
@@ -29,9 +27,7 @@ import com.chanper.myspring.test.common.MyBeanFactoryPostProcessor;
 import com.chanper.myspring.test.common.MyBeanPostProcessor;
 import com.chanper.myspring.test.event.CustomEvent;
 import org.aopalliance.intercept.MethodInterceptor;
-import org.aspectj.lang.annotation.Before;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -40,8 +36,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ApiTest {
 
@@ -340,7 +334,14 @@ public class ApiTest {
         ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring.xml");
         Husband husband = applicationContext.getBean("husband", Husband.class);
         Wife wife = applicationContext.getBean("wife", Wife.class);
-        System.out.println("Husband's wife: " + husband.queryWife());
+//        System.out.println("Husband's wife: " + husband.queryWife());
         System.out.println("Wife's husband: " + wife.queryHusband());
+    }
+
+    @Test
+    void test_convert() {
+        ClassPathXmlApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:spring.xml");
+        Husband husband = applicationContext.getBean("husband", Husband.class);
+        System.out.println("测试结果：" + husband);
     }
 }

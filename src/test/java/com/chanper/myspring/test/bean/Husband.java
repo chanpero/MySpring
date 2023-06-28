@@ -1,19 +1,34 @@
 package com.chanper.myspring.test.bean;
 
+import java.time.LocalDate;
+
 public class Husband {
 
-    private Wife wife;
+    private String wifeName;
 
-    public String queryWife(){
-        return "Husband.wife";
+    private LocalDate marriageDate;
+
+    public String getWifeName() {
+        return wifeName;
     }
 
-    public Wife getWife() {
-        return wife;
+    public void setWifeName(String wifeName) {
+        this.wifeName = wifeName;
     }
 
-    public void setWife(Wife wife) {
-        this.wife = wife;
+    public LocalDate getMarriageDate() {
+        return marriageDate;
     }
 
+    public void setMarriageDate(LocalDate marriageDate) {
+        this.marriageDate = marriageDate;
+    }
+
+    @Override
+    public String toString() {
+        return "Husband{" +
+                "wife=" + wifeName +
+                ", marriageDate=" + marriageDate +
+                '}';
+    }
 }

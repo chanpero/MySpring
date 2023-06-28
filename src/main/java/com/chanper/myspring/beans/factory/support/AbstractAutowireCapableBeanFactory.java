@@ -1,13 +1,14 @@
 package com.chanper.myspring.beans.factory.support;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.bean.OptionalBean;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.TypeUtil;
 import com.chanper.myspring.beans.BeansException;
 import com.chanper.myspring.beans.PropertyValue;
 import com.chanper.myspring.beans.PropertyValues;
 import com.chanper.myspring.beans.factory.*;
 import com.chanper.myspring.beans.factory.config.*;
+import com.chanper.myspring.core.convert.ConversionService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -19,7 +20,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     @Override
     protected Object createBean(String beanName, BeanDefinition beanDefinition, Object[] args) throws BeansException {
         Object bean = resolveBeforeInstantiation(beanName, beanDefinition);
-        if(bean != null)
+        if (bean != null)
             return bean;
 
         return doCreateBean(beanName, beanDefinition, args);
@@ -32,14 +33,14 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
             bean = createBeanInstance(beanDefinition, beanName, args);
 
             // 处理循环依赖
-            if(beanDefinition.isSingleton()) {
+            if (beanDefinition.isSingleton()) {
                 Object finalBean = bean;
                 addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, beanDefinition, finalBean));
             }
 
             // 实例化后判断
             boolean continueWithPropertyPopulation = applyBeanPostProcessorsAfterInstantiation(beanName, bean);
-            if(!continueWithPropertyPopulation)
+            if (!continueWithPropertyPopulation)
                 return bean;
 
             // 设置 bean 属性前允许 BeanPostProcessor 修改属性值
@@ -57,7 +58,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
         // 判断 SCOPE_SINGLETON/PROTOTYPE
         Object exposedObject = bean;
-        if(beanDefinition.isSingleton()) {
+        if (beanDefinition.isSingleton()) {
             exposedObject = getSingleton(beanName);
             registerSingleton(beanName, exposedObject);
         }
@@ -67,9 +68,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     protected Object getEarlyBeanReference(String beanName, BeanDefinition beanDefinition, Object bean) {
         Object exposedObject = bean;
         for (BeanPostProcessor beanPostProcessor : getBeanPostProcessors()) {
-            if(beanPostProcessor instanceof InstantiationAwareBeanPostProcessor) {
+            if (beanPostProcessor instanceof InstantiationAwareBeanPostProcessor) {
                 exposedObject = ((InstantiationAwareBeanPostProcessor) beanPostProcessor).getEarlyBeanReference(exposedObject, beanName);
-                if(exposedObject == null)
+                if (exposedObject == null)
                     return exposedObject;
             }
         }
@@ -115,9 +116,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
     private boolean applyBeanPostProcessorsAfterInstantiation(String beanName, Object bean) {
         boolean continueWithPropertyPopulation = true;
         for (BeanPostProcessor beanPostProcessor : getBeanPostProcessors()) {
-            if(beanPostProcessor instanceof InstantiationAwareBeanPostProcessor) {
+            if (beanPostProcessor instanceof InstantiationAwareBeanPostProcessor) {
                 InstantiationAwareBeanPostProcessor instantiationAwareBeanPostProcessor = (InstantiationAwareBeanPostProcessor) beanPostProcessor;
-                if(!instantiationAwareBeanPostProcessor.postProcessAfterInstantiation(bean, beanName)){
+                if (!instantiationAwareBeanPostProcessor.postProcessAfterInstantiation(bean, beanName)) {
                     continueWithPropertyPopulation = false;
                     break;
                 }
@@ -128,9 +129,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
     void applyBeanPostProcessorsBeforeApplyingPropertyValues(String beanName, Object bean, BeanDefinition beanDefinition) {
         for (BeanPostProcessor beanPostProcessor : getBeanPostProcessors()) {
-            if(beanPostProcessor instanceof InstantiationAwareBeanPostProcessor) {
+            if (beanPostProcessor instanceof InstantiationAwareBeanPostProcessor) {
                 PropertyValues pvs = ((InstantiationAwareBeanPostProcessor) beanPostProcessor).postProcessPropertyValues(beanDefinition.getPropertyValues(), bean, beanName);
-                if(pvs != null) {
+                if (pvs != null) {
                     for (PropertyValue propertyValue : pvs.getPropertyValues()) {
                         beanDefinition.getPropertyValues().addPropertyValue(propertyValue);
                     }
@@ -149,7 +150,18 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
                 if (value instanceof BeanReference) {
                     BeanReference beanReference = (BeanReference) value;
                     value = getBean(beanReference.getBeanName());
+                } else { // 类型转换
+                    Class<?> sourceType = value.getClass();
+                    Class<?> targetType = (Class<?>) TypeUtil.getFieldType(bean.getClass(), name);
+
+                    ConversionService conversionService = getConversionService();
+                    if (conversionService != null) {
+                        if (conversionService.canConvert(sourceType, targetType)) {
+                            value = conversionService.convert(value, targetType);
+                        }
+                    }
                 }
+
                 BeanUtil.setFieldValue(bean, name, value);
             }
         } catch (Exception e) {

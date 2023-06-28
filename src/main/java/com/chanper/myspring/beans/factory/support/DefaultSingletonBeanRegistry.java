@@ -18,7 +18,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
 
     // level two cache, 早期半成品对象
-    protected  final Map<String, Object> earlySingletonObjects = new HashMap<>();
+    protected final Map<String, Object> earlySingletonObjects = new HashMap<>();
 
     // level three cache, 单例工厂对象
     private final Map<String, ObjectFactory<?>> singletonFactories = new HashMap<String, ObjectFactory<?>>();
@@ -28,13 +28,13 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     @Override
     public Object getSingleton(String beanName) {
         Object singletonObject = singletonObjects.get(beanName);
-        if(singletonObject == null) { // 没有就到二级缓存中取
+        if (singletonObject == null) { // 没有就到二级缓存中取
             singletonObject = earlySingletonObjects.get(beanName);
-            if(singletonObject == null) { // 二级还没有去三级缓存找，只有代理对象才会放到三级缓存
+            if (singletonObject == null) { // 二级还没有去三级缓存找，只有代理对象才会放到三级缓存
                 ObjectFactory<?> singletonFactory = singletonFactories.get(beanName);
-                if(singletonFactory != null) {
+                if (singletonFactory != null) {
                     singletonObject = singletonFactory.getObject();
-                    //把三级缓存中的代理对象中的真实对象取出来放入二级缓存
+                    //把三级缓存代理工厂的真实对象取出来放入二级缓存
                     earlySingletonObjects.put(beanName, singletonObject);
                     singletonFactories.remove(beanName);
                 }
@@ -51,7 +51,7 @@ public class DefaultSingletonBeanRegistry implements SingletonBeanRegistry {
     }
 
     protected void addSingletonFactory(String beanName, ObjectFactory<?> singletonFactory) {
-        if(!this.singletonFactories.containsKey(beanName)) {
+        if (!this.singletonFactories.containsKey(beanName)) {
             this.singletonFactories.put(beanName, singletonFactory);
             this.earlySingletonObjects.remove(beanName);
         }
